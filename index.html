@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Емтихан нәтижелерінің талдауы</title>
+<style>
+:root{
+  color-scheme: light;
+  --page:#f6f6f3; --surface:#fcfcfb; --surface-2:#f0efec;
+  --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,.10);
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#6250d6; --s8:#e34948;
+  --good:#0ca30c; --good-text:#006300; --warn:#fab219; --crit:#d03b3b; --crit-text:#b52a2a;
+  --accent:#2a78d6;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    color-scheme: dark;
+    --page:#0d0d0d; --surface:#1a1a19; --surface-2:#262624;
+    --ink:#f0efec; --ink-2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#0ca30c; --s7:#9085e9; --s8:#e66767;
+    --good-text:#0ca30c; --crit:#d03b3b; --crit-text:#e66767; --accent:#3987e5;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+header.top{background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20}
+.wrap{max-width:1240px;margin:0 auto;padding:0 20px}
+.toprow{display:flex;align-items:center;gap:12px;padding:12px 0;flex-wrap:wrap}
+.toprow h1{font-size:18px;margin:0;font-weight:650;flex:1;min-width:200px}
+.toprow h1 small{display:block;font-size:12px;font-weight:400;color:var(--ink-2)}
+button,.btn{font:inherit;border:1px solid var(--border);background:var(--surface);color:var(--ink);border-radius:8px;padding:7px 12px;cursor:pointer}
+button:hover,.btn:hover{background:var(--surface-2)}
+.btn.primary{background:var(--accent);color:#fff;border-color:transparent}
+.btn.primary:hover{filter:brightness(1.07)}
+.maintabs{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 0 12px}
+.maintabs:empty{display:none}
+.mtab{text-align:left;padding:12px 16px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface);display:flex;flex-direction:column;gap:2px}
+.mtab b{font-size:17px;font-weight:650}
+.mtab span{font-size:12.5px;color:var(--ink-2)}
+.mtab.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,var(--surface));box-shadow:inset 0 -3px 0 var(--accent)}
+.mtab.on b{color:var(--accent)}
+.bigsec{font-size:22px;font-weight:700;margin:40px 0 4px;padding-top:6px}
+.bigsec small{display:block;font-size:13px;font-weight:400;color:var(--ink-2);margin-top:2px}
+.filters{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:0 0 12px}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:9px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;border-radius:0;padding:7px 14px}
+.seg button+button{border-left:1px solid var(--border)}
+.seg button.on{background:var(--ink);color:var(--surface)}
+select,input[type=search],input[type=number]{font:inherit;border:1px solid var(--border);background:var(--surface);color:var(--ink);border-radius:8px;padding:7px 10px}
+label.f{display:inline-flex;align-items:center;gap:6px;color:var(--ink-2);font-size:13px}
+main{padding:20px 0 60px}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:900px){.g2{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+.card h2{font-size:15px;margin:0 0 2px;font-weight:650}
+.card .sub{color:var(--ink-2);font-size:12.5px;margin:0 0 12px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px}
+.kpi .l{color:var(--ink-2);font-size:12.5px}
+.kpi .v{font-size:30px;font-weight:650;letter-spacing:-.5px;font-variant-numeric:tabular-nums;margin-top:2px}
+.kpi .v small{font-size:14px;font-weight:500;color:var(--ink-2);letter-spacing:0}
+.kpi .d{font-size:12.5px;margin-top:2px;color:var(--ink-2)}
+.up{color:var(--good-text)} .down{color:var(--crit-text)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-2);margin:0 0 6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.legend i.dash{height:0;border-top:2px dashed var(--muted);border-radius:0;width:14px;vertical-align:3px}
+.chart{width:100%;overflow:hidden}
+.chart svg{display:block}
+.chart text{fill:var(--muted);font-size:11px;font-family:inherit}
+.chart text.val{fill:var(--ink-2);font-size:11.5px;font-weight:600}
+details.tbl{margin-top:8px;font-size:12.5px}
+details.tbl summary{cursor:pointer;color:var(--ink-2)}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:6px 8px;border-bottom:1px solid var(--grid);text-align:left;white-space:nowrap}
+th{font-weight:600;color:var(--ink-2);font-size:12.5px;position:sticky;top:0;background:var(--surface)}
+th.sort{cursor:pointer;user-select:none}
+th.sort:hover{color:var(--ink)}
+td.n,th.n{text-align:right}
+tbody tr.click{cursor:pointer}
+tbody tr.click:hover{background:var(--surface-2)}
+.scroll{overflow:auto;max-height:560px;border:1px solid var(--grid);border-radius:10px}
+.chip{display:inline-block;font-size:11.5px;padding:1px 7px;border-radius:999px;margin:1px 3px 1px 0;border:1px solid var(--border);white-space:nowrap}
+.chip.bad{background:color-mix(in srgb,var(--crit) 14%,transparent);color:var(--crit-text);border-color:transparent}
+.chip.ok{background:color-mix(in srgb,var(--good) 14%,transparent);color:var(--good-text);border-color:transparent}
+.low{color:var(--crit-text);font-weight:600}
+.hb{display:grid;grid-template-columns:minmax(110px,190px) 1fr 70px;gap:6px 10px;align-items:center;font-size:13px}
+.hb .bar{height:14px;background:var(--surface-2);border-radius:4px;overflow:hidden}
+.hb .bar span{display:block;height:100%;border-radius:0 4px 4px 0}
+.hb .num{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-2)}
+.empty{max-width:720px;margin:40px auto;text-align:center}
+.drop{border:2px dashed var(--axis);border-radius:16px;padding:40px 20px;background:var(--surface);cursor:pointer}
+.drop.over{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,var(--surface))}
+.drop h2{margin:0 0 6px;font-size:20px}
+.drop p{margin:4px 0;color:var(--ink-2)}
+.note{font-size:12.5px;color:var(--ink-2)}
+#tip{position:fixed;pointer-events:none;z-index:100;background:var(--ink);color:var(--surface);font-size:12.5px;padding:7px 10px;border-radius:8px;max-width:300px;opacity:0;transition:opacity .08s;white-space:pre-line;line-height:1.4}
+dialog{border:1px solid var(--border);border-radius:16px;background:var(--surface);color:var(--ink);padding:0;width:min(940px,94vw);max-height:90vh}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog .dh{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:2}
+dialog .dh h2{margin:0;font-size:17px}
+dialog .db{padding:16px 18px;overflow:auto}
+.files td input,.files td select{padding:4px 6px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:10px;z-index:200;font-size:13px;max-width:90vw}
+.secttl{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:26px 0 10px;font-weight:600}
+.row-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="toprow">
+      <h1>Емтихан нәтижелерінің талдауы<small>БС (сынақ ҰБТ) және ПҚС (пән бойынша қорытынды сынақ)</small></h1>
+      <button class="btn primary" id="btnUpload">＋ Файл жүктеу</button>
+      <button class="btn" id="btnPick">👤 Оқушыны таңдау</button>
+      <button class="btn" id="btnFiles">Файлдар</button>
+      <button class="btn" id="btnSettings">Шекті балдар</button>
+      <input type="file" id="fileInput" accept=".xlsx" multiple hidden>
+    </div>
+    <div class="maintabs" id="mainTabs"></div>
+    <div class="filters" id="filters"></div>
+  </div>
+</header>
+<main><div class="wrap" id="app"></div></main>
+<div id="tip"></div>
+
+<dialog id="dlgStudent"><div class="dh"><h2 id="stTitle"></h2><button data-close>✕</button></div><div class="db" id="stBody"></div></dialog>
+<dialog id="dlgPick"><div class="dh"><h2>Оқушыны таңдау</h2><button data-close>✕</button></div><div class="db" id="pickBody"></div></dialog>
+<dialog id="dlgFiles"><div class="dh"><h2>Жүктелген файлдар</h2><button data-close>✕</button></div><div class="db" id="filesBody"></div></dialog>
+<dialog id="dlgSettings"><div class="dh"><h2>Шекті балдар</h2><button data-close>✕</button></div><div class="db" id="setBody"></div></dialog>
+
+<script>
+"use strict";
+/* ================= Тұрақтылар ================= */
+const MAX = {os:10, ms:10, kt:20, prof:50, total:140};
+const SUBJ_NAMES = {os:'Оқу сауаттылығы', ms:'Математикалық сауаттылық', kt:'Қазақстан тарихы'};
+const SUBJ_SHORT = {os:'ОС', ms:'МС', kt:'ҚТ'};
+const PROF_SHORT = {"Математика":"Матем","Физика":"Физика","Химия":"Химия","Биология":"Биол","География":"Геогр","Информатика":"Информ","Ағылшын тілі":"Ағылш","Дүние жүзі тарихы":"ДЖТ","Құқық негіздері":"Құқық","Қазақ әдебиеті":"Қаз.әд","Қазақ тілі":"Қаз.т","Орыс тілі":"Орыс т","Шығармашылық емтихан":"Шығарм"};
+const shortLbl = s => SUBJ_SHORT[s]||PROF_SHORT[s]||s;
+const DEFAULT_TH = {total:50, os:3, ms:3, kt:3, prof:2};
+const LS_DATA='emtihan-taldau-data-v1', LS_TH='emtihan-taldau-th-v1';
+const COLORS = ['var(--s1)','var(--s2)','var(--s3)','var(--s4)','var(--s5)','var(--s6)','var(--s7)','var(--s8)'];
+
+let state = {
+  exams: [],               // {id,file,type,grade,num,label,rows:[]}
+  th: {...DEFAULT_TH},
+  ui: {tab:'БС', view:'exam', grade:null, examId:null, cls:'all', search:'', sort:{k:'total',dir:-1}, cmpA:null, cmpB:null}
+};
+
+/* ================= Көмекші ================= */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = s => String(s ?? '').replace(/\s+/g,' ').trim();
+const fmt = (x,d=1) => x==null||isNaN(x) ? '—' : (Math.round(x*10**d)/10**d).toFixed(d).replace('.',',').replace(/,0+$/,'');
+const pct = x => x==null||isNaN(x) ? '—' : Math.round(x*100)+'%';
+const avg = a => { a=a.filter(v=>v!=null&&!isNaN(v)); return a.length? a.reduce((s,v)=>s+v,0)/a.length : null; };
+const num = v => { if(v==null||v==='') return null; if(typeof v==='number') return v; const s=String(v).replace(',','.').trim(); if(!/^-?\d+(\.\d+)?$/.test(s)) return null; return parseFloat(s); };
+function toast(msg,ms=3500){ const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),ms); }
+function deltaHtml(d,dec=1,suffix=''){ if(d==null||isNaN(d)) return ''; const r=Math.round(d*10**dec)/10**dec; if(r===0) return `<span>±0${suffix}</span>`; return r>0?`<span class="up">▲ +${fmt(r,dec)}${suffix}</span>`:`<span class="down">▼ ${fmt(r,dec)}${suffix}</span>`; }
+
+/* ================= XLSX оқу (кітапханасыз) ================= */
+async function readZip(buf){
+  const dv=new DataView(buf); let e=-1;
+  for(let i=buf.byteLength-22;i>=Math.max(0,buf.byteLength-65557);i--){ if(dv.getUint32(i,true)===0x06054b50){e=i;break;} }
+  if(e<0) throw new Error('xlsx файлы емес');
+  const n=dv.getUint16(e+10,true); let p=dv.getUint32(e+16,true);
+  const files={}; const td=new TextDecoder();
+  for(let k=0;k<n;k++){
+    const method=dv.getUint16(p+10,true), csize=dv.getUint32(p+20,true), nl=dv.getUint16(p+28,true), el=dv.getUint16(p+30,true), cl=dv.getUint16(p+32,true), lo=dv.getUint32(p+42,true);
+    const name=td.decode(new Uint8Array(buf,p+46,nl));
+    files[name.toLowerCase()]={method,csize,lo}; p+=46+nl+el+cl;
+  }
+  return async name=>{
+    const f=files[name.toLowerCase()]; if(!f) return null;
+    const lnl=dv.getUint16(f.lo+26,true), lel=dv.getUint16(f.lo+28,true);
+    const data=new Uint8Array(buf,f.lo+30+lnl+lel,f.csize);
+    let out=data;
+    if(f.method===8){ const s=new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw')); out=new Uint8Array(await new Response(s).arrayBuffer()); }
+    return td.decode(out);
+  };
+}
+const xml = s => new DOMParser().parseFromString(s,'application/xml');
+const tags = (node,name) => Array.from(node.getElementsByTagNameNS('*',name));
+function colIdx(ref){ const m=/^([A-Z]+)/.exec(ref); let n=0; for(const ch of m[1]) n=n*26+ch.charCodeAt(0)-64; return n-1; }
+
+async function parseXlsx(buf){
+  const get=await readZip(buf);
+  const shared=[]; const ss=await get('xl/sharedStrings.xml');
+  if(ss) for(const si of tags(xml(ss),'si')){ shared.push(tags(si,'t').filter(t=>!t.closest||!t.parentNode||t.parentNode.localName!=='rPh').map(t=>t.textContent).join('')); }
+  const wb=xml(await get('xl/workbook.xml'));
+  const rels=xml(await get('xl/_rels/workbook.xml.rels')||'<x/>');
+  const relMap={}; for(const r of tags(rels,'Relationship')) relMap[r.getAttribute('Id')]=r.getAttribute('Target');
+  const sheets=tags(wb,'sheet').map(s=>{ let t=relMap[s.getAttribute('r:id')]||''; t=t.replace(/^\/?xl\//,'').replace(/^\//,''); return {name:s.getAttribute('name'), path:'xl/'+t}; });
+  const out=[];
+  for(const sh of sheets){
+    const txt=await get(sh.path); if(!txt) continue;
+    const grid=[];
+    for(const row of tags(xml(txt),'row')){
+      const r=+row.getAttribute('r')-1; const cells=[];
+      for(const c of tags(row,'c')){
+        const t=c.getAttribute('t'); const v=tags(c,'v')[0]; let val=null;
+        if(t==='s'&&v) val=shared[+v.textContent];
+        else if(t==='inlineStr') val=tags(c,'t').map(x=>x.textContent).join('');
+        else if(v){ val=v.textContent; if(t!=='str'&&t!=='e'&&t!=='b'){ const n=Number(val); if(!isNaN(n)) val=n; } }
+        cells[colIdx(c.getAttribute('r'))]=val;
+      }
+      grid[r]=cells;
+    }
+    out.push({name:sh.name, grid});
+  }
+  return out;
+}
+
+/* ================= Емтиханды тану ================= */
+function subjectKey(s){
+  const l=norm(s).toLowerCase();
+  if(l==='ос'||/оқу\s*сауат/.test(l)) return 'os';
+  if(l==='мс'||/математикалық\s*сауат/.test(l)) return 'ms';
+  if(l==='қт'||/қазақстан\s*тарих|қаз\.?\s*тарих/.test(l)) return 'kt';
+  return null;
+}
+function canonProfile(s){ s=norm(s); return s? s[0].toUpperCase()+s.slice(1) : s; }
+const LAT={A:'А',B:'В',E:'Е',K:'К',M:'М',H:'Н',O:'О',P:'Р',C:'С',T:'Т',X:'Х'};
+function parseClass(raw){
+  const s=norm(raw); const m=/(\d{1,2})\s*[-–]?\s*([A-Za-zА-Яа-яӘәҒғҚқҢңӨөҰұҮүІіЁё])/u.exec(s);
+  if(!m) return null; const grade=+m[1]; if(grade<5||grade>12) return null;
+  let L=m[2].toUpperCase(); L=LAT[L]||L;
+  return {grade, cls:grade+L};
+}
+function parseGrid(grid){
+  let hr=-1;
+  for(let r=0;r<Math.min(grid.length,40);r++){ const row=grid[r]||[]; if(row.some(v=>/аты|фио/i.test(String(v??'')))){hr=r;break;} }
+  if(hr<0) return null;
+  const H=grid[hr]; const col={fixed:{},subj:[],score:[]};
+  H.forEach((v,c)=>{
+    const h=norm(v).toLowerCase(); if(!h) return;
+    if(/аты|фио/.test(h)) col.name=c;
+    else if(/тобы|сынып|класс/.test(h)) col.cls=c;
+    else if(/жалпы|всего|барлығы/.test(h)) col.total=c;
+    else if(/пән|предмет/.test(h)) col.subj.push(c);
+    else if(h==='#'||/ұпай|балл/.test(h)) col.score.push(c);
+    else { const k=subjectKey(h); if(k) col.fixed[k]=c; }
+  });
+  if(col.name==null||col.cls==null) return null;
+  const pairs=col.subj.map((s,i)=>{ const next=col.subj[i+1]??Infinity; const sc=col.score.find(x=>x>s&&x<next); return [s,sc]; }).filter(p=>p[1]!=null);
+  let title=''; for(let r=0;r<hr;r++) for(const v of (grid[r]||[])) if(v&&!title&&String(v).length>8) title=norm(v);
+  const rows=[];
+  for(let r=hr+1;r<grid.length;r++){
+    const row=grid[r]; if(!row) continue;
+    const name=norm(row[col.name]); const ci=parseClass(row[col.cls]);
+    if(!name||!ci||/^\d+$/.test(name)) continue;
+    const rec={name, cls:ci.cls, grade:ci.grade, os:null, ms:null, kt:null, prof:[]};
+    for(const k in col.fixed) rec[k]=num(row[col.fixed[k]]);
+    for(const [s,sc] of pairs){
+      const sn=norm(row[s]); const v=num(row[sc]); if(!sn) continue;
+      const k=subjectKey(sn);
+      if(k) rec[k]=v; else rec.prof.push({n:canonProfile(sn), v});
+    }
+    const parts=[rec.os,rec.ms,rec.kt,...rec.prof.map(p=>p.v)];
+    rec.absent=!parts.some(v=>v!=null);
+    let t=col.total!=null?num(row[col.total]):null;
+    if(!rec.absent&&(t==null||t===0)){ const s=parts.reduce((a,v)=>a+(v||0),0); if(t==null||s>0) t=s; }
+    rec.total=rec.absent?null:t;
+    rows.push(rec);
+  }
+  return {title, rows};
+}
+function detectMeta(fname,title,rows){
+  const f=fname.replace(/\.xlsx$/i,'');
+  const hasP = s => /п[қк]с|pks/iu.test(s);
+  const type = hasP(f)?'ПҚС' : (/бс|дас/iu.test(f)?'БС' : (hasP(title)?'ПҚС':'БС'));
+  let numv=null;
+  if(/дас/iu.test(f)) numv=0;
+  else {
+    const re=/(?:бс|п[қк]с)\s*[-–—]?\s*(\d{1,2})(?!\d)/iu;
+    const m=re.exec(f)||re.exec(title)||/[-–—]\s*(\d)\s*емтихан/iu.exec(title);
+    if(m) numv=+m[1];
+  }
+  const cnt={}; rows.forEach(r=>cnt[r.grade]=(cnt[r.grade]||0)+1);
+  const grade=+Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0] || (/(\d{2})\s*[-–]?\s*с/u.exec(f)||[])[1]*1 || null;
+  return {type, num:numv??1, grade};
+}
+const examLabel = e => (e.type==='БС'&&e.num===0)?'ДАС':`${e.type}-${e.num}`;
+const examId = e => `${e.type}|${e.grade}|${e.num}`;
+
+/* ================= Оқушыларды сәйкестендіру ================= */
+function nameTokens(n){ return norm(n).toLowerCase().replace(/[.]/g,' ').split(' ').filter(Boolean); }
+function titleCase(n){ return nameTokens(n).map(t=>t[0].toUpperCase()+t.slice(1)+(t.length===1?'.':'')).join(' '); }
+function buildRegistry(){
+  const reg={}; // grade -> {students:{}, bySurname:{}}
+  const exams=[...state.exams].sort((a,b)=>abbrRatio(a)-abbrRatio(b));
+  for(const ex of exams){
+    const R=reg[ex.grade]||(reg[ex.grade]={students:{},bySur:{}}); const used=new Set();
+    for(const row of ex.rows){
+      const tk=nameTokens(row.name); const sur=tk[0]||'?'; const first=tk[1]||''; const abbr=first.length<=1;
+      let sid=null; const cands=(R.bySur[sur]||[]).map(id=>R.students[id]);
+      if(!abbr){
+        const ex1=cands.find(s=>s.first===first); if(ex1) sid=ex1.id;
+        else { const ab=cands.filter(s=>s.abbr&&(!s.first||first.startsWith(s.first))); if(ab.length===1){ sid=ab[0].id; Object.assign(ab[0],{first,abbr:false,name:titleCase(row.name)}); } }
+      } else {
+        const m=cands.filter(s=>!first||s.first.startsWith(first)); if(m.length===1) sid=m[0].id;
+      }
+      if(sid&&used.has(sid)) sid=null;
+      if(!sid) sid=fuzzyFind(R,sur,first,abbr,row.cls,used);
+      if(sid&&!abbr){ const st=R.students[sid]; if(st.abbr){ Object.assign(st,{first,abbr:false,name:titleCase(row.name)}); } }
+      if(!sid){
+        sid=`${ex.grade}:${sur}:${first}:${Object.keys(R.students).length}`;
+        R.students[sid]={id:sid,sur,first,abbr,name:titleCase(row.name),cls:row.cls};
+        (R.bySur[sur]||(R.bySur[sur]=[])).push(sid);
+      }
+      row.sid=sid; used.add(sid);
+      const st=R.students[sid]; if(!row.absent||!st.cls) st.cls=row.cls;
+    }
+  }
+  state.reg=reg;
+}
+const FOLD={'қ':'к','ғ':'г','ұ':'у','ү':'у','ө':'о','ә':'а','і':'и','ң':'н','һ':'х','ы':'и','й':'и','ё':'е','э':'е','х':'г'};
+const fold = s => [...s].map(c=>FOLD[c]||c).join('');
+function lev(a,b){ if(a===b) return 0; const m=a.length,n=b.length; if(Math.abs(m-n)>3) return 9; let p=Array.from({length:n+1},(_,i)=>i); for(let i=1;i<=m;i++){ const c=[i]; for(let j=1;j<=n;j++) c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1)); p=c; } return p[n]; }
+function fuzzyFind(R,sur,first,abbr,cls,used){
+  const fs=fold(sur), ff=fold(first), lim=fs.length>=7?2:1;
+  const cands=[];
+  for(const st of Object.values(R.students)){
+    if(used.has(st.id)) continue;
+    const d=lev(fs,fold(st.sur)); if(d>lim) continue;
+    const sf=fold(st.first);
+    let ok;
+    if(abbr||st.abbr) ok=!ff||!sf||sf[0]===ff[0];
+    else ok=lev(ff,sf)<=(ff.length>=6?2:1);
+    if(ok) cands.push({st,d:d+(st.cls===cls?0:0.5)});
+  }
+  if(!cands.length) return null;
+  cands.sort((a,b)=>a.d-b.d);
+  if(cands.length>1&&cands[0].d===cands[1].d) return null;
+  return cands[0].st.id;
+}
+function abbrRatio(ex){ if(!ex.rows.length) return 1; return ex.rows.filter(r=>(nameTokens(r.name)[1]||'').length<=1).length/ex.rows.length; }
+const stName = (grade,sid) => state.reg?.[grade]?.students[sid]?.name || '?';
+
+/* ================= Талдау ================= */
+function fails(r){
+  if(r.absent) return [];
+  const T=state.th, f=[];
+  if((r.total??0)<T.total) f.push(`Жалпы < ${T.total}`);
+  for(const k of ['os','ms','kt']) if(r[k]!=null&&r[k]<T[k]) f.push(`${SUBJ_SHORT[k]} < ${T[k]}`);
+  for(const p of r.prof) if(p.v!=null&&p.v<T.prof) f.push(`${p.n} < ${T.prof}`);
+  return f;
+}
+function summarize(rows){
+  const pres=rows.filter(r=>!r.absent);
+  const risk=pres.filter(r=>fails(r).length);
+  return {n:rows.length, present:pres.length, absent:rows.length-pres.length,
+    avg:avg(pres.map(r=>r.total)), max:pres.length?Math.max(...pres.map(r=>r.total)):null,
+    pass:pres.length?(pres.length-risk.length)/pres.length:null, risk:risk.length,
+    over50:pres.length?pres.filter(r=>r.total>=state.th.total).length/pres.length:null};
+}
+function subjectAvgs(rows){
+  const pres=rows.filter(r=>!r.absent); const out=[];
+  for(const k of ['os','ms','kt']){ const a=avg(pres.map(r=>r[k])); out.push({key:k,label:SUBJ_SHORT[k],full:SUBJ_NAMES[k],avg:a,max:MAX[k],n:pres.filter(r=>r[k]!=null).length}); }
+  const prof={}; pres.forEach(r=>r.prof.forEach(p=>{ if(p.v==null) return; (prof[p.n]||(prof[p.n]=[])).push(p.v); }));
+  Object.keys(prof).sort((a,b)=>prof[b].length-prof[a].length).forEach(n=>out.push({key:'p:'+n,label:n,full:n,avg:avg(prof[n]),max:MAX.prof,n:prof[n].length}));
+  return out;
+}
+function examsOf(type,grade){ return state.exams.filter(e=>e.type===type&&e.grade===grade).sort((a,b)=>a.num-b.num); }
+function filterCls(rows){ return state.ui.cls==='all'?rows:rows.filter(r=>r.cls===state.ui.cls); }
+function classesOf(grade){ const s=new Set(); state.exams.filter(e=>e.grade===grade).forEach(e=>e.rows.forEach(r=>s.add(r.cls))); return [...s].sort((a,b)=>a.localeCompare(b,'kk')); }
+
+/* ================= Графиктер (SVG) ================= */
+function niceMax(v){ if(v<=0) return 1; const st=v/4, p=10**Math.floor(Math.log10(st)); for(const m of [1,1.5,2,2.5,3,4,5,6,8,10]){ const s=m*p; if(p<1&&!Number.isInteger(s)) continue; if(p>=1&&!Number.isInteger(s)) continue; if(s*4>=v) return s*4; } return 40*p; }
+function legendHtml(items){ return `<div class="legend">${items.map(i=>`<span><i class="${i.dash?'dash':''}" style="${i.dash?'':'background:'+i.color}"></i>${esc(i.name)}</span>`).join('')}</div>`; }
+function truncate(s,maxc){ s=String(s); return s.length>maxc? s.slice(0,Math.max(1,maxc-1))+'…' : s; }
+
+function barChart(el,o){
+  const W=Math.max(300,el.clientWidth||600), h=o.h||280, m={l:40,r:10,t:22,b:40};
+  const iw=W-m.l-m.r, ih=h-m.t-m.b;
+  const vals=o.series.flatMap(s=>s.values).filter(v=>v!=null);
+  const max=o.yMax??niceMax(Math.max(1,...vals, o.ref?.v||0));
+  const y=v=>m.t+ih-(v/max)*ih, base=m.t+ih;
+  const nc=o.cats.length, ns=o.series.length, gw=iw/Math.max(1,nc);
+  const bw=Math.max(3,Math.min(38,(gw*0.78-(ns-1)*2)/ns)), groupW=bw*ns+(ns-1)*2;
+  let s=`<svg width="${W}" height="${h}" role="img" aria-label="${esc(o.aria||'')}">`;
+  for(let i=0;i<=4;i++){ const v=max*i/4, yy=y(v); s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${yy}" y2="${yy}" style="stroke:var(--grid)" stroke-width="1"/><text x="${m.l-6}" y="${yy+4}" text-anchor="end">${(o.yFmt||fmtTick)(v)}</text>`; }
+  if(o.ref){ const yy=y(o.ref.v); s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${yy}" y2="${yy}" style="stroke:var(--muted)" stroke-width="1.5" stroke-dasharray="5 4"/><text x="${W-m.r}" y="${yy-5}" text-anchor="end">${esc(o.ref.label)}</text>`; }
+  o.cats.forEach((c,ci)=>{
+    const gx=m.l+ci*gw+(gw-groupW)/2;
+    o.series.forEach((se,si)=>{
+      const v=se.values[ci]; if(v==null) return;
+      const x=gx+si*(bw+2), top=Math.min(y(v),base-0.5), hh=base-top, r=Math.min(4,bw/2,hh);
+      const color=(o.barColor&&o.barColor(ci,si,v))||se.color;
+      const tip=(o.tip?o.tip(ci,si,v):`${c}\n${se.name}: ${(o.vFmt||fmt)(v)}`);
+      s+=`<path d="M${x},${base}V${top+r}Q${x},${top} ${x+r},${top}H${x+bw-r}Q${x+bw},${top} ${x+bw},${top+r}V${base}Z" style="fill:${color}"/>`;
+      s+=`<rect x="${x-1}" y="${m.t}" width="${bw+2}" height="${ih}" fill="transparent" data-tip="${esc(tip)}"/>`;
+      if(o.labels&&ns===1) s+=`<text class="val" x="${x+bw/2}" y="${top-4}" text-anchor="middle">${(o.vFmt||fmt)(v)}</text>`;
+    });
+    const maxc=Math.max(3,Math.floor(gw/6.4));
+    const longest=Math.max(...o.cats.map(x=>String(x).length)), every=o.skipLabels&&longest>maxc?Math.ceil(longest*6.4/gw):1;
+    if(ci%every===0) s+=`<text x="${m.l+ci*gw+gw/2}" y="${base+16}" text-anchor="middle">${esc(o.skipLabels?c:truncate(c,maxc))}<title>${esc(c)}</title></text>`;
+  });
+  s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${base}" y2="${base}" style="stroke:var(--axis)"/></svg>`;
+  el.innerHTML=s;
+}
+function fmtTick(v){ return Number.isInteger(v)?String(v):fmt(v); }
+function lineChart(el,o){
+  const W=Math.max(300,el.clientWidth||600), h=o.h||240, m={l:40,r:24,t:22,b:34};
+  const iw=W-m.l-m.r, ih=h-m.t-m.b;
+  const vals=o.series.flatMap(s=>s.values).filter(v=>v!=null);
+  const max=o.yMax??niceMax(Math.max(1,...vals,o.ref?.v||0));
+  const nc=o.cats.length; const x=i=> nc===1? m.l+iw/2 : m.l+i*(iw/(nc-1)); const y=v=>m.t+ih-(v/max)*ih;
+  let s=`<svg width="${W}" height="${h}" role="img" aria-label="${esc(o.aria||'')}">`;
+  for(let i=0;i<=4;i++){ const v=max*i/4, yy=y(v); s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${yy}" y2="${yy}" style="stroke:var(--grid)"/><text x="${m.l-6}" y="${yy+4}" text-anchor="end">${(o.yFmt||fmtTick)(v)}</text>`; }
+  if(o.ref){ const yy=y(o.ref.v); s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${yy}" y2="${yy}" style="stroke:var(--muted)" stroke-width="1.5" stroke-dasharray="5 4"/><text x="${W-m.r}" y="${yy-5}" text-anchor="end">${esc(o.ref.label)}</text>`; }
+  s+=`<line class="xh" x1="-10" x2="-10" y1="${m.t}" y2="${m.t+ih}" style="stroke:var(--axis)" stroke-width="1"/>`;
+  o.series.forEach(se=>{
+    const pts=se.values.map((v,i)=>v==null?null:[x(i),y(v)]);
+    let d='', pen=false; pts.forEach(p=>{ if(!p){pen=false;return;} d+=(pen?'L':'M')+p[0]+','+p[1]; pen=true; });
+    s+=`<path d="${d}" fill="none" style="stroke:${se.color}" stroke-width="2" stroke-linejoin="round"/>`;
+    pts.forEach(p=>{ if(p) s+=`<circle cx="${p[0]}" cy="${p[1]}" r="4.5" style="fill:${se.color};stroke:var(--surface)" stroke-width="2"/>`; });
+    const li=se.values.map((v,i)=>v==null?-1:i).filter(i=>i>=0).pop();
+    if(li!=null&&li>=0) s+=`<text class="val" x="${x(li)}" y="${y(se.values[li])-10}" text-anchor="middle">${(o.vFmt||fmt)(se.values[li])}</text>`;
+  });
+  o.cats.forEach((c,i)=>{
+    s+=`<text x="${x(i)}" y="${m.t+ih+18}" text-anchor="middle">${esc(c)}</text>`;
+    const half=nc===1?iw/2:iw/(nc-1)/2;
+    const tip=c+'\n'+o.series.map(se=>`${se.name}: ${(o.vFmt||fmt)(se.values[i])}`).join('\n');
+    s+=`<rect x="${x(i)-half}" y="${m.t}" width="${half*2}" height="${ih}" fill="transparent" data-tip="${esc(tip)}" data-cx="${x(i)}"/>`;
+  });
+  s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${m.t+ih}" y2="${m.t+ih}" style="stroke:var(--axis)"/></svg>`;
+  el.innerHTML=s;
+}
+function hbars(items){
+  const max=Math.max(1,...items.map(i=>i.max??i.value));
+  return `<div class="hb">${items.map(i=>`<div title="${esc(i.full||i.label)}">${esc(i.label)}</div><div class="bar" data-tip="${esc(i.tip||'')}"><span style="width:${Math.max(0.5,(i.value/(i.max??max))*100)}%;background:${i.color||'var(--s1)'}"></span></div><div class="num">${i.text}</div>`).join('')}</div>`;
+}
+function tableHtml(head,rows){ return `<table><thead><tr>${head.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`; }
+const charts=[]; // {el, fn}
+function chartCard(id,title,sub,legend,tbl){
+  return `<div class="card"><h2>${esc(title)}</h2>${sub?`<p class="sub">${sub}</p>`:''}${legend||''}<div class="chart" id="${id}"></div>${tbl?`<details class="tbl"><summary>Кесте түрінде көру</summary>${tbl}</details>`:''}</div>`;
+}
+function drawCharts(){ for(const c of charts){ const el=document.getElementById(c.id); if(el) c.fn(el); } }
+
+/* ================= Жүктеу ================= */
+async function handleFiles(fileList){
+  const files=[...fileList].filter(f=>/\.xlsx$/i.test(f.name));
+  if(!files.length){ toast('Тек .xlsx файлдарын жүктеңіз'); return; }
+  let ok=0, bad=[];
+  for(const f of files){
+    try{
+      const sheets=await parseXlsx(await f.arrayBuffer());
+      let parsed=null; for(const sh of sheets){ parsed=parseGrid(sh.grid); if(parsed&&parsed.rows.length) break; }
+      if(!parsed||!parsed.rows.length) throw new Error('кесте табылмады');
+      const meta=detectMeta(f.name,parsed.title,parsed.rows);
+      const ex={file:f.name,title:parsed.title,...meta,rows:parsed.rows.filter(r=>!meta.grade||r.grade===meta.grade)};
+      ex.id=examId(ex); ex.label=examLabel(ex);
+      state.exams=state.exams.filter(e=>e.id!==ex.id); state.exams.push(ex); ok++;
+    }catch(err){ console.error(err); bad.push(f.name+' ('+err.message+')'); }
+  }
+  save(); buildRegistry();
+  if(!state.ui.grade||!state.exams.some(e=>e.grade===state.ui.grade)) state.ui.grade=Math.max(...state.exams.map(e=>e.grade));
+  state.ui.examId=null;
+  render();
+  toast(`${ok} файл жүктелді`+(bad.length?`. Қате: ${bad.join(', ')}`:''), bad.length?7000:3000);
+}
+function save(){ try{ localStorage.setItem(LS_DATA,JSON.stringify(state.exams)); localStorage.setItem(LS_TH,JSON.stringify(state.th)); }catch(e){} }
+function load(){ try{ state.exams=JSON.parse(localStorage.getItem(LS_DATA)||'[]'); state.th={...DEFAULT_TH,...JSON.parse(localStorage.getItem(LS_TH)||'{}')}; }catch(e){ state.exams=[]; } buildRegistry(); }
+
+/* ================= Сүзгілер ================= */
+function renderFilters(){
+  const f=$('#filters'), mt=$('#mainTabs');
+  if(!state.exams.length){ f.innerHTML=''; mt.innerHTML=''; return; }
+  const u=state.ui;
+  const TYPES=[['БС','БС — сынақ ҰБТ','ДАС, БС-1, БС-2 …'],['ПҚС','ПҚС','Өтілген тақырыптар бойынша емтихан']];
+  mt.innerHTML=TYPES.map(([k,l,d])=>{ const n=state.exams.filter(e=>e.type===k).length; return `<button data-v="${k}" class="mtab ${u.tab===k?'on':''}"><b>${l}</b><span>${d} · ${n?`${n} файл`:'файл жоқ'}</span></button>`; }).join('');
+  mt.querySelectorAll('button').forEach(b=>b.onclick=()=>{ if(u.tab===b.dataset.v) return; u.tab=b.dataset.v; u.examId=null; u.cmpA=u.cmpB=null; render(); });
+  const grades=[...new Set(state.exams.map(e=>e.grade))].sort();
+  if(!grades.includes(u.grade)) u.grade=grades[grades.length-1];
+  const list=examsOf(u.tab,u.grade);
+  u.examId=list.length?list[list.length-1].id:null;
+  const cls=classesOf(u.grade); if(u.cls!=='all'&&!cls.includes(u.cls)) u.cls='all';
+  f.innerHTML=`
+    <div class="seg" id="segGrade">${grades.map(g=>`<button data-v="${g}" class="${u.grade===g?'on':''}">${g}-сынып</button>`).join('')}</div>
+    <label class="f">Сынып <select id="selCls"><option value="all">Барлық сыныптар</option>${cls.map(c=>`<option ${c===u.cls?'selected':''}>${c}</option>`).join('')}</select></label>`;
+  f.querySelectorAll('#segGrade button').forEach(b=>b.onclick=()=>{u.grade=+b.dataset.v; u.examId=null; u.cls='all'; u.cmpA=u.cmpB=null; render();});
+  $('#selCls').onchange=e=>{u.cls=e.target.value; render();};
+}
+
+/* ================= Негізгі бет ================= */
+function render(){
+  charts.length=0;
+  renderFilters();
+  const app=$('#app');
+  if(!state.exams.length){ app.innerHTML=emptyHtml(); bindDrop($('#drop')); return; }
+  app.innerHTML=renderExam()+renderCompare();
+  bindPage();
+  drawCharts();
+}
+function emptyHtml(){
+  return `<div class="empty"><div class="drop" id="drop"><h2>Excel файлдарын осында тастаңыз</h2>
+  <p>немесе басып, файлдарды таңдаңыз (.xlsx, бірнешеуін бірден)</p>
+  <p class="note" style="margin-top:14px">Файл атауында емтихан түрі мен нөмірі болсын, мысалы: <b>11 сынып БС-1.xlsx</b>, <b>10 сынып ПҚС-2.xlsx</b>, <b>11 сынып ДАС.xlsx</b>.<br>Деректер тек осы компьютерде сақталады, интернетке жіберілмейді.</p></div></div>`;
+}
+function bindDrop(el){
+  if(!el) return;
+  el.onclick=()=>$('#fileInput').click();
+  ['dragenter','dragover'].forEach(ev=>el.addEventListener(ev,e=>{e.preventDefault();el.classList.add('over');}));
+  ['dragleave','drop'].forEach(ev=>el.addEventListener(ev,e=>{e.preventDefault();el.classList.remove('over');}));
+  el.addEventListener('drop',e=>handleFiles(e.dataTransfer.files));
+}
+
+function renderExam(){
+  const u=state.ui, list=examsOf(u.tab,u.grade);
+  if(!list.length) return `<div class="card"><h2>${u.grade}-сынып үшін ${u.tab} емтиханы жүктелмеген</h2><p class="sub">Жоғарыдағы «Файл жүктеу» батырмасы арқылы қосыңыз.</p></div>`;
+  const ex=list.find(e=>e.id===u.examId)||list[list.length-1];
+  const idx=list.indexOf(ex), prev=idx>0?list[idx-1]:null;
+  const rows=filterCls(ex.rows), S=summarize(rows), P=prev?summarize(filterCls(prev.rows)):null;
+  const T=state.th;
+  const color=i=>COLORS[i%8];
+  const clsLbl=u.cls==='all'?`${u.grade}-сыныптар`:u.cls;
+  let h='';
+  // KPI
+  h+=`<h2 class="bigsec" style="margin-top:0">Соңғы емтихан: ${esc(ex.label)} <small>${esc(clsLbl)} · жүктелген ${u.tab} емтихандары: ${list.map(e=>esc(e.label)).join(", ")}</small></h2><div class="secttl">Негізгі көрсеткіштер</div><div class="kpis">
+    <div class="kpi"><div class="l">Орташа балл</div><div class="v">${fmt(S.avg)}<small> / ${MAX.total}</small></div><div class="d">${P?deltaHtml(S.avg-P.avg)+' '+esc(prev.label)+' емтиханымен салыстырғанда':'&nbsp;'}</div></div>
+    <div class="kpi"><div class="l">Барлық шекті балдан өткендер</div><div class="v">${pct(S.pass)}</div><div class="d">${P?deltaHtml((S.pass-P.pass)*100,0,' п.')+' ':''}${S.present-S.risk} оқушы / ${S.present}</div></div>
+    <div class="kpi"><div class="l">Қауіп тобы</div><div class="v ${S.risk?'down':''}">${S.risk}</div><div class="d">шекті балдың кем дегенде біреуінен өтпеген</div></div>
+    <div class="kpi"><div class="l">Қатысқандар</div><div class="v">${S.present}<small> / ${S.n}</small></div><div class="d">${S.absent?`${S.absent} оқушы қатыспаған`:'барлығы қатысқан'}</div></div>
+    <div class="kpi"><div class="l">Ең жоғары балл</div><div class="v">${S.max??'—'}</div><div class="d">${T.total} баллдан жоғары: ${pct(S.over50)}</div></div>
+  </div>`;
+  // Динамика
+  const dyn=list.map(e=>summarize(filterCls(e.rows)));
+  const cats=list.map(e=>e.label);
+  h+=`<div class="secttl">Динамика</div><div class="grid g2">`;
+  h+=chartCard('chAvg','Орташа балл динамикасы',`${esc(clsLbl)}, барлық ${esc(u.tab)} емтихандары бойынша`,legendHtml([{name:'Орташа балл',color:'var(--s1)'},{name:`Шекті балл (${T.total})`,dash:true}]),
+      tableHtml(['Емтихан','Қатысқаны','Орташа','Өткендер %','Қауіп тобы'],list.map((e,i)=>[e.label,dyn[i].present,fmt(dyn[i].avg),pct(dyn[i].pass),dyn[i].risk])));
+  h+=chartCard('chPass','Шекті балдан өткендер үлесі',`Жалпы ≥ ${T.total}, ОС/МС/ҚТ ≥ ${T.os}/${T.ms}/${T.kt}, бейіндік пәндер ≥ ${T.prof}`,'',null);
+  h+=`</div>`;
+  charts.push({id:'chAvg',fn:el=>lineChart(el,{cats,series:[{name:'Орташа балл',color:'var(--s1)',values:dyn.map(d=>d.avg)}],yMax:MAX.total,ref:{v:T.total,label:`шекті балл ${T.total}`},aria:'Орташа балл динамикасы'})});
+  charts.push({id:'chPass',fn:el=>lineChart(el,{cats,series:[{name:'Өткендер',color:'var(--s3)',values:dyn.map(d=>d.pass==null?null:d.pass*100)}],yMax:100,yFmt:v=>v+'%',vFmt:v=>v==null?'—':Math.round(v)+'%',aria:'Өткендер үлесі'})});
+
+  // Сыныптар
+  const allCls=classesOf(u.grade).filter(c=>list.some(e=>e.rows.some(r=>r.cls===c)));
+  const clsSeries=list.map((e,i)=>({name:e.label,color:color(i),values:allCls.map(c=>summarize(e.rows.filter(r=>r.cls===c)).avg)}));
+  const clsPass=allCls.map(c=>summarize(ex.rows.filter(r=>r.cls===c)));
+  h+=`<div class="secttl">Сыныптар бойынша</div><div class="grid g2">`;
+  h+=chartCard('chCls','Сыныптардың орташа балы','Әр емтихан бөлек түспен',legendHtml(clsSeries.map(s=>({name:s.name,color:s.color}))),
+     tableHtml(['Сынып',...list.map(e=>e.label)],allCls.map((c,ci)=>[c,...clsSeries.map(s=>fmt(s.values[ci]))])));
+  h+=`<div class="card"><h2>Сыныптар рейтингі — ${esc(ex.label)}</h2><p class="sub">Орташа балл және шекті балдан өткендер үлесі</p>${
+     hbars(allCls.map((c,i)=>({c,s:clsPass[i]})).filter(x=>x.s.present).sort((a,b)=>b.s.avg-a.s.avg).map(x=>({label:x.c,value:x.s.avg,max:MAX.total,text:fmt(x.s.avg),color:'var(--s1)',tip:`${x.c}\nОрташа: ${fmt(x.s.avg)}\nӨткендер: ${pct(x.s.pass)} (${x.s.present-x.s.risk}/${x.s.present})\nҚауіп тобы: ${x.s.risk}`})))
+  }<details class="tbl"><summary>Кесте түрінде көру</summary>${tableHtml(['Сынып','Қатысқаны','Орташа','Ең жоғары','Өткендер %','Қауіп тобы'],allCls.map((c,i)=>[c,clsPass[i].present,fmt(clsPass[i].avg),clsPass[i].max??'—',pct(clsPass[i].pass),clsPass[i].risk]))}</details></div>`;
+  h+=`</div>`;
+  charts.push({id:'chCls',fn:el=>barChart(el,{cats:allCls,series:clsSeries,yMax:MAX.total,ref:{v:T.total,label:`шекті балл ${T.total}`},aria:'Сыныптардың орташа балы'})});
+
+  // Пәндер
+  const subjNow=subjectAvgs(rows);
+  const subjKeys=subjNow.map(s=>s.key);
+  const subjSeries=list.map((e,i)=>{ const sa=subjectAvgs(filterCls(e.rows)); return {name:e.label,color:color(i),values:subjKeys.map(k=>{const x=sa.find(s=>s.key===k); return x&&x.avg!=null? x.avg/x.max*100 : null;})}; });
+  h+=`<div class="secttl">Пәндер бойынша</div><div class="grid g2">`;
+  h+=chartCard('chSubj','Пәндердің орындалу пайызы','Орташа балл ÷ максимум балл (ОС, МС — 10; ҚТ — 20; бейіндік — 50)',legendHtml(subjSeries.map(s=>({name:s.name,color:s.color}))),
+     tableHtml(['Пән',...list.map(e=>e.label)],subjNow.map((s,si)=>[esc(s.full),...subjSeries.map(se=>se.values[si]==null?'—':Math.round(se.values[si])+'%')])));
+  h+=`<div class="card"><h2>Пәндер — ${esc(ex.label)}</h2><p class="sub">Орташа балл / максимум · тапсырғандар саны</p>${
+     hbars(subjNow.filter(s=>s.avg!=null).map(s=>({label:s.label,full:s.full,value:s.avg,max:s.max,text:`${fmt(s.avg)} / ${s.max}`,color:s.avg/s.max<0.4?'var(--crit)':'var(--s1)',tip:`${s.full}\nОрташа: ${fmt(s.avg)} / ${s.max} (${pct(s.avg/s.max)})\nТапсырғаны: ${s.n}`})))
+  }<p class="note" style="margin-top:10px"><span class="chip bad">қызыл</span> — орындалу 40%-дан төмен пәндер</p></div>`;
+  h+=`</div>`;
+  charts.push({id:'chSubj',fn:el=>barChart(el,{cats:subjNow.map(s=>shortLbl(s.label)),tip:(ci,si,v)=>`${subjNow[ci].full}\n${subjSeries[si].name}: ${Math.round(v)}%`,series:subjSeries,yMax:100,yFmt:v=>v+'%',vFmt:v=>v==null?'—':Math.round(v)+'%',aria:'Пәндер'})});
+
+  // Таралу + шекті балл себептері
+  const pres=rows.filter(r=>!r.absent);
+  const bins=[]; for(let b=0;b<MAX.total;b+=10) bins.push({lo:b,hi:b+9,n:0});
+  pres.forEach(r=>{ const i=Math.min(bins.length-1,Math.floor((r.total||0)/10)); bins[i].n++; });
+  const reasons={}; pres.forEach(r=>fails(r).forEach(f=>reasons[f]=(reasons[f]||0)+1));
+  const rs=Object.entries(reasons).sort((a,b)=>b[1]-a[1]);
+  h+=`<div class="secttl">Балдардың таралуы және шекті балл</div><div class="grid g2">`;
+  h+=chartCard('chHist',`Балдардың таралуы — ${ex.label}`,'Әр бағанда — сол аралықта балл жинаған оқушылар саны',legendHtml([{name:`${T.total}-ден төмен`,color:'var(--crit)'},{name:`${T.total} және жоғары`,color:'var(--s1)'}]),
+     tableHtml(['Аралық','Оқушылар'],bins.map(b=>[`${b.lo}–${b.hi}`,b.n])));
+  h+=`<div class="card"><h2>Шекті балдан өтпеу себептері</h2><p class="sub">Бір оқушыда бірнеше себеп болуы мүмкін · барлығы ${S.risk} оқушы</p>${
+     rs.length? hbars(rs.map(([k,v])=>({label:k,value:v,max:Math.max(...rs.map(x=>x[1])),text:`${v} оқушы`,color:'var(--crit)',tip:`${k}: ${v} оқушы (${pct(v/S.present)})`}))) : '<p class="note">Барлық оқушы шекті балдан өтті ✓</p>'
+  }</div></div>`;
+  charts.push({id:'chHist',fn:el=>barChart(el,{cats:bins.map(b=>`${b.lo}–${b.hi}`),series:[{name:'Оқушылар',color:'var(--s1)',values:bins.map(b=>b.n)}],labels:true,skipLabels:true,vFmt:v=>String(v),barColor:(ci)=>bins[ci].lo<T.total?'var(--crit)':null,tip:(ci,si,v)=>`${bins[ci].lo}–${bins[ci].hi} балл\n${v} оқушы`,aria:'Балдардың таралуы'})});
+
+  // Қауіп тобы және үздіктер
+  const prevMap=prev?new Map(prev.rows.filter(r=>!r.absent).map(r=>[r.sid,r])):new Map();
+  const risk=pres.filter(r=>fails(r).length).sort((a,b)=>a.total-b.total);
+  const top=[...pres].sort((a,b)=>b.total-a.total).slice(0,10);
+  h+=`<div class="secttl">Оқушылар</div><div class="grid g2">`;
+  h+=`<div class="card"><h2>Қауіп тобы — ${risk.length} оқушы</h2><p class="sub">Шекті балдың кем дегенде біреуінен өтпегендер, балы бойынша өсу ретімен</p><div class="scroll" style="max-height:420px">${
+    risk.length? tableHtml(['Аты-жөні','Сынып','Жалпы','Себебі'],risk.map(r=>[`<a href="#" data-sid="${esc(r.sid)}">${esc(stName(ex.grade,r.sid))}</a>`,r.cls,`<b>${r.total}</b>`,fails(r).map(f=>`<span class="chip bad">${esc(f)}</span>`).join('')])) : '<p class="note" style="padding:10px">Қауіп тобында оқушы жоқ ✓</p>'
+  }</div></div>`;
+  h+=`<div class="card"><h2>Үздік 10 оқушы</h2><p class="sub">${esc(ex.label)} · ${esc(clsLbl)}</p>${tableHtml(['#','Аты-жөні','Сынып','Жалпы',prev?'Өзгеріс':''],top.map((r,i)=>{ const p=prevMap.get(r.sid); return [i+1,`<a href="#" data-sid="${esc(r.sid)}">${esc(stName(ex.grade,r.sid))}</a>`,r.cls,`<b>${r.total}</b>`,p?deltaHtml(r.total-p.total,0):'']; }))}</div>`;
+  h+=`</div>`;
+
+  // Толық кесте
+  h+=`<div class="card" style="margin-top:16px"><h2>Барлық оқушылар — ${esc(ex.label)}</h2><p class="sub">Оқушыны басып, оның барлық емтихандағы нәтижесін көріңіз. Шекті балдан төмен балдар <span class="low">қызылмен</span> белгіленген.</p>
+    <div class="row-actions"><input type="search" id="search" placeholder="Аты-жөні бойынша іздеу…" value="${esc(u.search)}" style="min-width:260px"><span class="note" id="cnt"></span></div>
+    <div class="scroll" id="stTable"></div></div>`;
+  state._tableCtx={ex,prev,prevMap,rows};
+  return h;
+}
+
+function renderStudentTable(){
+  const {ex,prev,prevMap,rows}=state._tableCtx; const u=state.ui, T=state.th;
+  const q=u.search.toLowerCase();
+  let list=rows.map(r=>({r,name:stName(ex.grade,r.sid),p:prevMap.get(r.sid)}));
+  if(q) list=list.filter(x=>x.name.toLowerCase().includes(q));
+  const key={name:x=>x.name,cls:x=>x.r.cls,os:x=>x.r.os??-1,ms:x=>x.r.ms??-1,kt:x=>x.r.kt??-1,p1:x=>x.r.prof[0]?.v??-1,p2:x=>x.r.prof[1]?.v??-1,total:x=>x.r.total??-1,delta:x=>x.p&&!x.r.absent?x.r.total-x.p.total:-999};
+  const k=key[u.sort.k]||key.total, d=u.sort.dir;
+  list.sort((a,b)=>{ const A=k(a),B=k(b); return (typeof A==='string'?A.localeCompare(B,'kk'):A-B)*d; });
+  const cell=(v,th)=>v==null?'<span class="note">—</span>':(v<th?`<span class="low">${v}</span>`:v);
+  const H=[['name','Аты-жөні'],['cls','Сынып'],['os','ОС'],['ms','МС'],['kt','ҚТ'],['p1','Бейіндік пән 1'],['p2','Бейіндік пән 2'],['total','Жалпы']].concat(prev?[['delta','Өзгеріс']]:[]).concat([[null,'Мәртебе']]);
+  const arrow=kk=>u.sort.k===kk?(u.sort.dir>0?' ↑':' ↓'):'';
+  $('#stTable').innerHTML=`<table><thead><tr><th>#</th>${H.map(([kk,l])=>`<th class="${kk?'sort':''} ${['os','ms','kt','total','delta'].includes(kk)?'n':''}" ${kk?`data-k="${kk}"`:''}>${l}${arrow(kk)}</th>`).join('')}</tr></thead><tbody>${
+    list.map((x,i)=>{ const r=x.r, f=fails(r);
+      return `<tr class="click" data-sid="${esc(r.sid)}"><td class="note">${i+1}</td><td>${esc(x.name)}</td><td>${r.cls}</td>${
+        r.absent?`<td colspan="${prev?7:6}" class="note">қатыспаған</td><td><span class="chip">жоқ</span></td>`:
+        `<td class="n">${cell(r.os,T.os)}</td><td class="n">${cell(r.ms,T.ms)}</td><td class="n">${cell(r.kt,T.kt)}</td>${[0,1].map(j=>`<td>${r.prof[j]?`${esc(r.prof[j].n)}: <b>${cell(r.prof[j].v,T.prof)}</b>`:'—'}</td>`).join('')}<td class="n"><b>${cell(r.total,T.total)}</b></td>${prev?`<td class="n">${x.p?deltaHtml(r.total-x.p.total,0):'<span class="note">—</span>'}</td>`:''}<td>${f.length?`<span class="chip bad" title="${esc(f.join(', '))}">⚠ қауіп</span>`:'<span class="chip ok">✓ өтті</span>'}</td>`}</tr>`; }).join('')
+  }</tbody></table>`;
+  $('#cnt').textContent=`${list.length} оқушы`;
+  $('#stTable').querySelectorAll('th.sort').forEach(th=>th.onclick=()=>{ const kk=th.dataset.k; if(u.sort.k===kk) u.sort.dir*=-1; else u.sort={k:kk,dir:kk==='name'||kk==='cls'?1:-1}; renderStudentTable(); });
+  $('#stTable').querySelectorAll('tr[data-sid]').forEach(tr=>tr.onclick=()=>openStudent(ex.grade,tr.dataset.sid));
+}
+
+/* ================= Салыстыру ================= */
+function renderCompare(){
+  const u=state.ui, all=examsOf(u.tab,u.grade);
+  if(all.length<2) return '';
+  if(!all.some(e=>e.id===u.cmpA)) u.cmpA=all[all.length-2].id;
+  if(!all.some(e=>e.id===u.cmpB)||u.cmpB===u.cmpA) u.cmpB=all.find(e=>e.id!==u.cmpA&&all.indexOf(e)>all.findIndex(x=>x.id===u.cmpA))?.id||all.find(e=>e.id!==u.cmpA).id;
+  const A=all.find(e=>e.id===u.cmpA), B=all.find(e=>e.id===u.cmpB);
+  const opt=sel=>all.map(e=>`<option value="${e.id}" ${e.id===sel?'selected':''}>${e.label}</option>`).join('');
+  const ra=filterCls(A.rows), rb=filterCls(B.rows), SA=summarize(ra), SB=summarize(rb);
+  const mapA=new Map(ra.filter(r=>!r.absent).map(r=>[r.sid,r]));
+  const pairs=rb.filter(r=>!r.absent&&mapA.has(r.sid)).map(r=>({b:r,a:mapA.get(r.sid),d:r.total-mapA.get(r.sid).total}));
+  const up=pairs.filter(p=>p.d>0).length, down=pairs.filter(p=>p.d<0).length, same=pairs.length-up-down;
+  const newRisk=pairs.filter(p=>!fails(p.a).length&&fails(p.b).length), outRisk=pairs.filter(p=>fails(p.a).length&&!fails(p.b).length);
+  const cA='var(--s1)', cB='var(--s2)';
+  let h=`<h2 class="bigsec">Емтихандарды салыстыру</h2><div class="card"><div class="row-actions" style="margin:0">
+     <label class="f">Бірінші емтихан <select id="cmpA">${opt(u.cmpA)}</select></label> <span>→</span>
+     <label class="f">Екінші емтихан <select id="cmpB">${opt(u.cmpB)}</select></label>
+     <span class="note">Екі емтиханға да қатысқан ${pairs.length} оқушы салыстырылады</span></div></div>`;
+  h+=`<div class="secttl">${esc(A.label)} → ${esc(B.label)}</div><div class="kpis">
+    <div class="kpi"><div class="l">Орташа балл</div><div class="v">${fmt(SA.avg)} → ${fmt(SB.avg)}</div><div class="d">${deltaHtml(SB.avg-SA.avg)}</div></div>
+    <div class="kpi"><div class="l">Өткендер үлесі</div><div class="v">${pct(SA.pass)} → ${pct(SB.pass)}</div><div class="d">${deltaHtml((SB.pass-SA.pass)*100,0,' п.')}</div></div>
+    <div class="kpi"><div class="l">Балы өскендер</div><div class="v up">${up}</div><div class="d">${pct(pairs.length?up/pairs.length:null)} · өзгермеген: ${same}</div></div>
+    <div class="kpi"><div class="l">Балы төмендегендер</div><div class="v down">${down}</div><div class="d">${pct(pairs.length?down/pairs.length:null)}</div></div>
+    <div class="kpi"><div class="l">Қауіп тобына жаңадан түскендер</div><div class="v ${newRisk.length?'down':''}">${newRisk.length}</div><div class="d">қауіп тобынан шыққандар: <span class="up">${outRisk.length}</span></div></div>
+  </div>`;
+  // Пәндер
+  const sa=subjectAvgs(ra), sb=subjectAvgs(rb); const keys=[...new Set([...sa,...sb].map(s=>s.key))];
+  const lab=k=>(sa.find(s=>s.key===k)||sb.find(s=>s.key===k)).label;
+  const val=(arr,k)=>{const x=arr.find(s=>s.key===k); return x&&x.avg!=null?x.avg/x.max*100:null;};
+  const sSeries=[{name:A.label,color:cA,values:keys.map(k=>val(sa,k))},{name:B.label,color:cB,values:keys.map(k=>val(sb,k))}];
+  const cls=classesOf(u.grade).filter(c=>A.rows.some(r=>r.cls===c)||B.rows.some(r=>r.cls===c));
+  const cSeries=[{name:A.label,color:cA,values:cls.map(c=>summarize(A.rows.filter(r=>r.cls===c)).avg)},{name:B.label,color:cB,values:cls.map(c=>summarize(B.rows.filter(r=>r.cls===c)).avg)}];
+  h+=`<div class="secttl">Пәндер мен сыныптар</div><div class="grid g2">`;
+  h+=chartCard('cmpSubj','Пәндердің орындалу пайызы','Орташа балл ÷ максимум балл',legendHtml(sSeries),tableHtml(['Пән',A.label,B.label,'Өзгеріс'],keys.map((k,i)=>[esc(lab(k)),sSeries[0].values[i]==null?'—':Math.round(sSeries[0].values[i])+'%',sSeries[1].values[i]==null?'—':Math.round(sSeries[1].values[i])+'%',sSeries[0].values[i]!=null&&sSeries[1].values[i]!=null?deltaHtml(sSeries[1].values[i]-sSeries[0].values[i],0,' п.'):''])));
+  h+=chartCard('cmpCls','Сыныптардың орташа балы','Барлық сыныптар (сынып сүзгісіне тәуелсіз)',legendHtml(cSeries),tableHtml(['Сынып',A.label,B.label,'Өзгеріс'],cls.map((c,i)=>[c,fmt(cSeries[0].values[i]),fmt(cSeries[1].values[i]),cSeries[0].values[i]!=null&&cSeries[1].values[i]!=null?deltaHtml(cSeries[1].values[i]-cSeries[0].values[i]):''])));
+  h+=`</div>`;
+  charts.push({id:'cmpSubj',fn:el=>barChart(el,{cats:keys.map(k=>shortLbl(lab(k))),tip:(ci,si,v)=>`${lab(keys[ci])}\n${sSeries[si].name}: ${Math.round(v)}%`,series:sSeries,yMax:100,yFmt:v=>v+'%',vFmt:v=>v==null?'—':Math.round(v)+'%'})});
+  charts.push({id:'cmpCls',fn:el=>barChart(el,{cats:cls,series:cSeries,yMax:MAX.total,ref:{v:state.th.total,label:`шекті балл ${state.th.total}`}})});
+  // Өзгеріс таралуы
+  const dbins=[]; for(let b=-40;b<40;b+=10) dbins.push({lo:b,hi:b+9,n:0});
+  pairs.forEach(p=>{ let i=Math.floor((p.d+40)/10); i=Math.max(0,Math.min(dbins.length-1,i)); dbins[i].n++; });
+  const dl=b=>b.lo===-40?'≤ −31':b.hi===39?'≥ +30':`${b.lo>0?'+':''}${b.lo}…${b.hi>0?'+':''}${b.hi}`;
+  const gr=u.grade;
+  const lst=(arr)=>tableHtml(['Аты-жөні','Сынып',A.label,B.label,'Өзгеріс'],arr.map(p=>[`<a href="#" data-sid="${esc(p.b.sid)}">${esc(stName(gr,p.b.sid))}</a>`,p.b.cls,p.a.total,`<b>${p.b.total}</b>`,deltaHtml(p.d,0)]));
+  h+=`<div class="secttl">Оқушылардың өзгерісі</div><div class="grid g2">`;
+  h+=chartCard('cmpDelta','Балл өзгерісінің таралуы','Неше оқушының балы қаншаға өзгерді',legendHtml([{name:'Төмендеген',color:'var(--crit)'},{name:'Өскен',color:'var(--good)'}]),tableHtml(['Өзгеріс','Оқушылар'],dbins.map(b=>[dl(b),b.n])));
+  h+=`<div class="card"><h2>Қауіп тобына жаңадан түскендер</h2><p class="sub">${esc(A.label)}-де өткен, ${esc(B.label)}-де өтпеген</p><div class="scroll" style="max-height:330px">${newRisk.length?tableHtml(['Аты-жөні','Сынып',A.label,B.label,'Себебі'],newRisk.map(p=>[`<a href="#" data-sid="${esc(p.b.sid)}">${esc(stName(gr,p.b.sid))}</a>`,p.b.cls,p.a.total,`<b>${p.b.total}</b>`,fails(p.b).map(f=>`<span class="chip bad">${esc(f)}</span>`).join('')])):'<p class="note" style="padding:10px">Жоқ ✓</p>'}</div></div>`;
+  h+=`<div class="card"><h2>Ең көп өскен 10 оқушы</h2>${lst([...pairs].sort((a,b)=>b.d-a.d).filter(p=>p.d>0).slice(0,10))}</div>`;
+  h+=`<div class="card"><h2>Ең көп төмендеген 10 оқушы</h2>${lst([...pairs].sort((a,b)=>a.d-b.d).filter(p=>p.d<0).slice(0,10))}</div>`;
+  h+=`</div>`;
+  charts.push({id:'cmpDelta',fn:el=>barChart(el,{cats:dbins.map(dl),series:[{name:'Оқушылар',color:'var(--good)',values:dbins.map(b=>b.n)}],labels:true,skipLabels:true,vFmt:v=>String(v),barColor:ci=>dbins[ci].hi<0?'var(--crit)':(dbins[ci].lo<0?'var(--muted)':null),tip:(ci,si,v)=>`Өзгеріс ${dl(dbins[ci])} балл\n${v} оқушы`})});
+  return h;
+}
+
+/* ================= Оқушы картасы ================= */
+function openStudent(grade,sid){
+  const st=state.reg[grade]?.students[sid]; if(!st) return;
+  const ex=examsOf(state.ui.tab,grade);
+  const rec=ex.map(e=>({e,r:e.rows.find(r=>r.sid===sid)})).filter(x=>x.r);
+  $('#stTitle').textContent=`${st.name} · ${st.cls} · ${state.ui.tab}`;
+  const T=state.th;
+  const cell=(v,th)=>v==null?'—':(v<th?`<span class="low">${v}</span>`:v);
+  const bs=rec.filter(x=>x.e.type==='БС'), pk=rec.filter(x=>x.e.type==='ПҚС');
+  const profNames=[...new Set(rec.flatMap(x=>x.r.prof.map(p=>p.n)))];
+  let h=`<div class="legend"><span><i style="background:${state.ui.tab==='ПҚС'?'var(--s2)':'var(--s1)'}"></i>${state.ui.tab} — жалпы балл</span><span><i class="dash"></i>Шекті балл (${T.total})</span></div><div class="chart" id="stChart"></div>`;
+  h+=`<div class="scroll" style="margin-top:14px">${tableHtml(['Емтихан','ОС','МС','ҚТ',...profNames,'Жалпы','Мәртебе'],rec.map(({e,r})=>r.absent?[e.label,'<span class="note">қатыспаған</span>','','',...profNames.map(()=>''),'','']:
+     [e.label,cell(r.os,T.os),cell(r.ms,T.ms),cell(r.kt,T.kt),...profNames.map(n=>{const p=r.prof.find(p=>p.n===n); return p?cell(p.v,T.prof):'—';}),`<b>${cell(r.total,T.total)}</b>`,fails(r).length?fails(r).map(f=>`<span class="chip bad">${esc(f)}</span>`).join(''):'<span class="chip ok">✓ өтті</span>']))}</div>`;
+  // пәндер профилі соңғы емтихан бойынша
+  const last=[...rec].reverse().find(x=>!x.r.absent);
+  if(last){
+    const r=last.r; const items=[['os',r.os,MAX.os],['ms',r.ms,MAX.ms],['kt',r.kt,MAX.kt]].filter(x=>x[1]!=null).map(([k,v,m])=>({label:SUBJ_SHORT[k],full:SUBJ_NAMES[k],value:v,max:m,text:`${v} / ${m}`,color:v<T[k]?'var(--crit)':'var(--s1)'}))
+      .concat(r.prof.filter(p=>p.v!=null).map(p=>({label:p.n,value:p.v,max:MAX.prof,text:`${p.v} / ${MAX.prof}`,color:p.v<T.prof?'var(--crit)':'var(--s1)'})));
+    h+=`<h3 style="font-size:14px;margin:18px 0 8px">Пәндер — соңғы емтихан (${esc(last.e.label)})</h3>${hbars(items)}`;
+  }
+  $('#stBody').innerHTML=h;
+  $('#dlgStudent').showModal();
+  const cats=rec.map(x=>x.e.label);
+  barChart($('#stChart'),{cats,series:[{name:'Жалпы балл',color:'var(--s1)',values:rec.map(x=>x.r.absent?null:x.r.total)}],yMax:MAX.total,labels:true,vFmt:v=>String(v),ref:{v:T.total,label:`шекті балл ${T.total}`},barColor:ci=>rec[ci].e.type==='ПҚС'?'var(--s2)':'var(--s1)',h:240,tip:(ci,si,v)=>`${cats[ci]}\nЖалпы: ${v}`});
+}
+
+/* ================= Оқушыны таңдау ================= */
+function openPicker(){
+  if(!state.exams.length){ toast('Алдымен файл жүктеңіз'); return; }
+  const grades=Object.keys(state.reg||{}).map(Number).sort();
+  const pk=state.ui.pick||(state.ui.pick={grade:state.ui.grade,cls:'all',q:''});
+  if(!grades.includes(pk.grade)) pk.grade=grades[grades.length-1];
+  const cls=classesOf(pk.grade); if(pk.cls!=='all'&&!cls.includes(pk.cls)) pk.cls='all';
+  $('#pickBody').innerHTML=`<div class="row-actions">
+      <div class="seg" id="pkGrade">${grades.map(g=>`<button data-v="${g}" class="${g===pk.grade?'on':''}">${g}-сынып</button>`).join('')}</div>
+      <select id="pkCls"><option value="all">Барлық сыныптар</option>${cls.map(c=>`<option ${c===pk.cls?'selected':''}>${c}</option>`).join('')}</select>
+      <input type="search" id="pkQ" placeholder="Аты-жөнін жазыңыз…" value="${esc(pk.q)}" style="flex:1;min-width:220px">
+    </div><div class="scroll" id="pkList" style="max-height:60vh"></div>`;
+  const drawList=()=>{
+    const ex=examsOf(state.ui.tab,pk.grade);
+    const q=pk.q.toLowerCase().trim(), fq=fold(q);
+    let list=Object.values(state.reg[pk.grade].students);
+    if(pk.cls!=='all') list=list.filter(s=>s.cls===pk.cls);
+    if(q) list=list.filter(s=>s.name.toLowerCase().includes(q)||fold(s.name.toLowerCase()).includes(fq));
+    list.sort((a,b)=>a.cls.localeCompare(b.cls,'kk')||a.name.localeCompare(b.name,'kk'));
+    const last=s=>{ for(let i=ex.length-1;i>=0;i--){ const r=ex[i].rows.find(r=>r.sid===s.id&&!r.absent); if(r) return {e:ex[i],r}; } return null; };
+    $('#pkList').innerHTML=list.length?`<table><thead><tr><th>Аты-жөні</th><th>Сынып</th><th>Соңғы нәтиже</th><th>Мәртебе</th></tr></thead><tbody>${list.map(s=>{ const l=last(s); const f=l?fails(l.r):[];
+      return `<tr class="click" data-sid="${esc(s.id)}"><td>${esc(s.name)}</td><td>${s.cls}</td><td>${l?`${esc(l.e.label)}: <b>${l.r.total}</b>`:'<span class="note">—</span>'}</td><td>${!l?'':f.length?'<span class="chip bad">⚠ қауіп</span>':'<span class="chip ok">✓ өтті</span>'}</td></tr>`; }).join('')}</tbody></table>`:'<p class="note" style="padding:10px">Оқушы табылмады</p>';
+    $('#pkList').querySelectorAll('tr[data-sid]').forEach(tr=>tr.onclick=()=>{ $('#dlgPick').close(); openStudent(pk.grade,tr.dataset.sid); });
+  };
+  $('#pickBody').querySelectorAll('#pkGrade button').forEach(b=>b.onclick=()=>{ pk.grade=+b.dataset.v; pk.cls='all'; openPicker(); });
+  $('#pkCls').onchange=e=>{ pk.cls=e.target.value; drawList(); };
+  $('#pkQ').oninput=e=>{ pk.q=e.target.value; drawList(); };
+  drawList();
+  if(!$('#dlgPick').open) $('#dlgPick').showModal();
+  $('#pkQ').focus();
+}
+
+/* ================= Файлдар / баптаулар ================= */
+function openFiles(){
+  const list=[...state.exams].sort((a,b)=>a.grade-b.grade||a.type.localeCompare(b.type)||a.num-b.num);
+  $('#filesBody').innerHTML=`<p class="note">Бағдарлама емтихан түрін, нөмірін және сыныбын файл атауынан анықтайды. Қате анықталса, осы жерден түзетіңіз. Бірдей емтиханды (мысалы, 11-сынып БС-2) қайта жүктесеңіз, ескісі ауыстырылады.</p>
+  <div class="scroll">${list.length?`<table class="files"><thead><tr><th>Файл</th><th>Түрі</th><th>Сынып</th><th>Нөмірі</th><th>Атауы</th><th class="n">Оқушы</th><th></th></tr></thead><tbody>${list.map(e=>`<tr data-id="${esc(e.id)}"><td>${esc(e.file)}</td>
+    <td><select data-f="type"><option ${e.type==='БС'?'selected':''}>БС</option><option ${e.type==='ПҚС'?'selected':''}>ПҚС</option></select></td>
+    <td><input type="number" data-f="grade" value="${e.grade}" min="5" max="12" style="width:64px"></td>
+    <td><input type="number" data-f="num" value="${e.num}" min="0" max="20" style="width:64px" title="БС үшін 0 = ДАС"></td>
+    <td><b>${esc(e.label)}</b></td><td class="n">${e.rows.length}</td><td><button data-del>Жою</button></td></tr>`).join('')}</tbody></table>`:'<p class="note" style="padding:10px">Файл жоқ</p>'}</div>
+  <div class="row-actions" style="margin-top:14px"><button class="btn primary" id="fAdd">＋ Тағы жүктеу</button><button class="btn" id="fClear">Барлық деректерді өшіру</button></div>`;
+  $('#filesBody').querySelectorAll('tr[data-id]').forEach(tr=>{
+    const e=state.exams.find(x=>x.id===tr.dataset.id);
+    tr.querySelectorAll('[data-f]').forEach(inp=>inp.onchange=()=>{
+      const f=inp.dataset.f; e[f]=f==='type'?inp.value:+inp.value;
+      const nid=examId(e); state.exams=state.exams.filter(x=>x===e||x.id!==nid);
+      e.id=nid; e.label=examLabel(e); save(); buildRegistry(); render(); openFiles();
+    });
+    tr.querySelector('[data-del]').onclick=()=>{ if(!confirm(`«${e.file}» файлын жою керек пе?`)) return; state.exams=state.exams.filter(x=>x!==e); save(); buildRegistry(); render(); openFiles(); };
+  });
+  $('#fAdd').onclick=()=>$('#fileInput').click();
+  $('#fClear').onclick=()=>{ if(!confirm('Барлық жүктелген деректерді өшіру керек пе? (Excel файлдарыңыз өзгермейді)')) return; state.exams=[]; save(); buildRegistry(); $('#dlgFiles').close(); render(); };
+  if(!$('#dlgFiles').open) $('#dlgFiles').showModal();
+}
+function openSettings(){
+  const T=state.th;
+  const f=(k,l)=>`<label class="f" style="display:flex;justify-content:space-between;margin:8px 0"><span>${l}</span><input type="number" min="0" data-k="${k}" value="${T[k]}" style="width:90px"></label>`;
+  $('#setBody').innerHTML=`<p class="note">Оқушы осы шектердің кем дегенде біреуінен өтпесе, «қауіп тобына» жатады.</p><div style="max-width:420px">
+    ${f('total','Жалпы балл (140-тан)')}${f('os','Оқу сауаттылығы (10-нан)')}${f('ms','Математикалық сауаттылық (10-нан)')}${f('kt','Қазақстан тарихы (20-дан)')}${f('prof','Әр бейіндік пән (50-ден)')}</div>
+    <div class="row-actions" style="margin-top:14px"><button class="btn primary" id="sSave">Сақтау</button><button class="btn" id="sReset">Әдепкі мәндер</button></div>`;
+  $('#sSave').onclick=()=>{ $('#setBody').querySelectorAll('[data-k]').forEach(i=>state.th[i.dataset.k]=+i.value||0); save(); $('#dlgSettings').close(); render(); toast('Шекті балдар сақталды'); };
+  $('#sReset').onclick=()=>{ state.th={...DEFAULT_TH}; save(); openSettings(); render(); };
+  if(!$('#dlgSettings').open) $('#dlgSettings').showModal();
+}
+
+/* ================= Оқиғалар ================= */
+function bindPage(){
+  const s=$('#search'); if(s){ s.oninput=()=>{state.ui.search=s.value; renderStudentTable();}; renderStudentTable(); }
+  $('#app').querySelectorAll('a[data-sid]').forEach(a=>a.onclick=e=>{e.preventDefault(); openStudent(state.ui.grade,a.dataset.sid);});
+  const a=$('#cmpA'), b=$('#cmpB'); if(a){ a.onchange=()=>{state.ui.cmpA=a.value; if(state.ui.cmpB===a.value) state.ui.cmpB=null; render();}; b.onchange=()=>{state.ui.cmpB=b.value; render();}; }
+}
+$('#btnUpload').onclick=()=>$('#fileInput').click();
+$('#fileInput').onchange=e=>{ handleFiles(e.target.files); e.target.value=''; };
+$('#btnFiles').onclick=openFiles;
+$('#btnPick').onclick=openPicker;
+$('#btnSettings').onclick=openSettings;
+document.querySelectorAll('dialog [data-close]').forEach(b=>b.onclick=()=>b.closest('dialog').close());
+document.querySelectorAll('dialog').forEach(d=>d.addEventListener('click',e=>{ if(e.target===d) d.close(); }));
+document.addEventListener('dragover',e=>e.preventDefault());
+document.addEventListener('drop',e=>{ e.preventDefault(); if(e.dataTransfer?.files?.length&&!e.target.closest('#drop')) handleFiles(e.dataTransfer.files); });
+const tip=$('#tip');
+document.addEventListener('mousemove',e=>{
+  const t=e.target.closest?.('[data-tip]');
+  if(t&&t.dataset.tip){ tip.textContent=t.dataset.tip; tip.style.opacity=1;
+    const w=tip.offsetWidth, hgt=tip.offsetHeight; let x=e.clientX+14, y=e.clientY+14;
+    if(x+w>innerWidth-8) x=e.clientX-w-14; if(y+hgt>innerHeight-8) y=e.clientY-hgt-14;
+    tip.style.left=x+'px'; tip.style.top=y+'px';
+    const svg=t.ownerSVGElement, xh=svg?.querySelector('.xh'); if(xh){ const cx=t.dataset.cx; xh.setAttribute('x1',cx??-10); xh.setAttribute('x2',cx??-10); }
+  } else { tip.style.opacity=0; document.querySelectorAll('.xh').forEach(x=>{x.setAttribute('x1',-10);x.setAttribute('x2',-10);}); }
+});
+let rz; addEventListener('resize',()=>{ clearTimeout(rz); rz=setTimeout(drawCharts,150); });
+
+load();
+if(state.exams.length) state.ui.grade=Math.max(...state.exams.map(e=>e.grade));
+render();
+</script>
+</body>
+</html>
