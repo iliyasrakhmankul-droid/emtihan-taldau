@@ -44,6 +44,12 @@ button:hover,.btn:hover{background:var(--surface-2)}
 .mtab.on b{color:var(--accent)}
 .bigsec{font-size:22px;font-weight:700;margin:40px 0 4px;padding-top:6px}
 .bigsec small{display:block;font-size:13px;font-weight:400;color:var(--ink-2);margin-top:2px}
+body.teacher .admin-only, body:not(.teacher) .teacher-only, body.locked .toprow button{display:none!important}
+.lock{max-width:440px;margin:60px auto;text-align:left}
+.lock h2{font-size:20px;margin:0 0 6px}
+.lock input[type=password]{width:100%;font-size:16px;padding:10px 12px;margin:10px 0}
+.lock .btn.primary{width:100%;padding:10px;font-size:15px;margin-top:8px}
+.steps{padding-left:20px;margin:8px 0} .steps li{margin:6px 0}
 .filters{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:0 0 12px}
 .seg{display:inline-flex;border:1px solid var(--border);border-radius:9px;overflow:hidden;background:var(--surface)}
 .seg button{border:0;border-radius:0;padding:7px 14px}
@@ -114,10 +120,13 @@ dialog .db{padding:16px 18px;overflow:auto}
   <div class="wrap">
     <div class="toprow">
       <h1>Емтихан нәтижелерінің талдауы<small>БС (сынақ ҰБТ) және ПҚС (пән бойынша қорытынды сынақ)</small></h1>
-      <button class="btn primary" id="btnUpload">＋ Файл жүктеу</button>
+      <span class="note" id="modeInfo"></span>
+      <button class="btn primary admin-only" id="btnUpload">＋ Файл жүктеу</button>
       <button class="btn" id="btnPick">👤 Оқушыны таңдау</button>
-      <button class="btn" id="btnFiles">Файлдар</button>
-      <button class="btn" id="btnSettings">Шекті балдар</button>
+      <button class="btn admin-only" id="btnFiles">Файлдар</button>
+      <button class="btn admin-only" id="btnSettings">Шекті балдар</button>
+      <button class="btn admin-only" id="btnPublish" style="border-color:var(--accent);color:var(--accent)">🔒 Мұғалімдерге жариялау</button>
+      <button class="btn teacher-only" id="btnLogout">Шығу</button>
       <input type="file" id="fileInput" accept=".xlsx" multiple hidden>
     </div>
     <div class="maintabs" id="mainTabs"></div>
@@ -128,6 +137,7 @@ dialog .db{padding:16px 18px;overflow:auto}
 <div id="tip"></div>
 
 <dialog id="dlgStudent"><div class="dh"><h2 id="stTitle"></h2><button data-close>✕</button></div><div class="db" id="stBody"></div></dialog>
+<dialog id="dlgPublish"><div class="dh"><h2>Мұғалімдерге жариялау</h2><button data-close>✕</button></div><div class="db" id="pubBody"></div></dialog>
 <dialog id="dlgPick"><div class="dh"><h2>Оқушыны таңдау</h2><button data-close>✕</button></div><div class="db" id="pickBody"></div></dialog>
 <dialog id="dlgFiles"><div class="dh"><h2>Жүктелген файлдар</h2><button data-close>✕</button></div><div class="db" id="filesBody"></div></dialog>
 <dialog id="dlgSettings"><div class="dh"><h2>Шекті балдар</h2><button data-close>✕</button></div><div class="db" id="setBody"></div></dialog>
@@ -463,7 +473,7 @@ async function handleFiles(fileList){
   render();
   toast(`${ok} файл жүктелді`+(bad.length?`. Қате: ${bad.join(', ')}`:''), bad.length?7000:3000);
 }
-function save(){ try{ localStorage.setItem(LS_DATA,JSON.stringify(state.exams)); localStorage.setItem(LS_TH,JSON.stringify(state.th)); }catch(e){} }
+function save(){ if(TEACHER) return; try{ localStorage.setItem(LS_DATA,JSON.stringify(state.exams)); localStorage.setItem(LS_TH,JSON.stringify(state.th)); }catch(e){} }
 function load(){ try{ state.exams=JSON.parse(localStorage.getItem(LS_DATA)||'[]'); state.th={...DEFAULT_TH,...JSON.parse(localStorage.getItem(LS_TH)||'{}')}; }catch(e){ state.exams=[]; } buildRegistry(); }
 
 /* ================= Сүзгілер ================= */
@@ -488,7 +498,7 @@ function renderFilters(){
 
 /* ================= Негізгі бет ================= */
 function render(){
-  charts.length=0;
+  charts.length=0; document.body.classList.remove('locked');
   renderFilters();
   const app=$('#app');
   if(!state.exams.length){ app.innerHTML=emptyHtml(); bindDrop($('#drop')); return; }
@@ -779,7 +789,7 @@ $('#btnSettings').onclick=openSettings;
 document.querySelectorAll('dialog [data-close]').forEach(b=>b.onclick=()=>b.closest('dialog').close());
 document.querySelectorAll('dialog').forEach(d=>d.addEventListener('click',e=>{ if(e.target===d) d.close(); }));
 document.addEventListener('dragover',e=>e.preventDefault());
-document.addEventListener('drop',e=>{ e.preventDefault(); if(e.dataTransfer?.files?.length&&!e.target.closest('#drop')) handleFiles(e.dataTransfer.files); });
+document.addEventListener('drop',e=>{ e.preventDefault(); if(!TEACHER&&e.dataTransfer?.files?.length&&!e.target.closest('#drop')) handleFiles(e.dataTransfer.files); });
 const tip=$('#tip');
 document.addEventListener('mousemove',e=>{
   const t=e.target.closest?.('[data-tip]');
@@ -792,9 +802,108 @@ document.addEventListener('mousemove',e=>{
 });
 let rz; addEventListener('resize',()=>{ clearTimeout(rz); rz=setTimeout(drawCharts,150); });
 
-load();
-if(state.exams.length) state.ui.grade=Math.max(...state.exams.map(e=>e.grade));
-render();
+/* ================= Жариялау және құпия сөз ================= */
+const ADMIN = location.protocol==='file:' || new URLSearchParams(location.search).has('admin');
+var TEACHER = false;
+const PW_KEY='emtihan-taldau-pw';
+const b64=u8=>{ let s=''; for(let i=0;i<u8.length;i+=0x8000) s+=String.fromCharCode(...u8.subarray(i,i+0x8000)); return btoa(s); };
+const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function gz(u8,mode){ const s=new Blob([u8]).stream().pipeThrough(mode==='c'?new CompressionStream('gzip'):new DecompressionStream('gzip')); return new Uint8Array(await new Response(s).arrayBuffer()); }
+async function deriveKey(pw,salt,iter){ const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']); return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:iter,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']); }
+async function encryptData(obj,pw){
+  const salt=crypto.getRandomValues(new Uint8Array(16)), iv=crypto.getRandomValues(new Uint8Array(12)), iter=250000;
+  const key=await deriveKey(pw,salt,iter);
+  const pt=await gz(new TextEncoder().encode(JSON.stringify(obj)),'c');
+  const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,pt));
+  return {app:'emtihan-taldau',v:1,iter,salt:b64(salt),iv:b64(iv),ct:b64(ct)};
+}
+async function decryptData(pub,pw){
+  const key=await deriveKey(pw,unb64(pub.salt),pub.iter);
+  const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(pub.iv)},key,unb64(pub.ct));
+  return JSON.parse(new TextDecoder().decode(await gz(new Uint8Array(pt),'d')));
+}
+async function fetchPub(){
+  if(location.protocol==='file:') return null;
+  try{ const r=await fetch('data.json?t='+Date.now(),{cache:'no-store'}); if(!r.ok) return null; const j=await r.json(); return j&&j.app==='emtihan-taldau'&&j.ct?j:null; }catch(e){ return null; }
+}
+function applyData(data){
+  state.exams=(data.exams||[]).map(e=>({...e,id:examId(e),label:examLabel(e)}));
+  state.th={...DEFAULT_TH,...(data.th||{})};
+  state.pubDate=data.date;
+  buildRegistry();
+  if(state.exams.length) state.ui.grade=Math.max(...state.exams.map(e=>e.grade));
+}
+function setModeInfo(){
+  const d=state.pubDate?new Date(state.pubDate).toLocaleDateString('ru-RU'):null;
+  $('#modeInfo').innerHTML = TEACHER ? (d?`Жаңартылған: ${d}`:'') : (ADMIN&&location.protocol!=='file:'?'<span class="chip">Әкімші режимі</span>':'');
+}
+function showLock(pub,forAdmin){
+  charts.length=0; $('#filters').innerHTML=''; $('#mainTabs').innerHTML=''; document.body.classList.add('locked');
+  $('#app').innerHTML=`<div class="card lock"><h2>🔒 Емтихан нәтижелерінің талдауы</h2>
+    <p class="note">${forAdmin?'Сайтта жарияланған деректер бар. Оларды жалғастыру үшін құпия сөзді енгізіңіз немесе бос бастаңыз.':'Нәтижелерді көру үшін мектеп әкімшілігі берген құпия сөзді енгізіңіз.'}</p>
+    <form id="lockForm"><input type="password" id="pw" placeholder="Құпия сөз" autocomplete="current-password" autofocus>
+    <label class="f"><input type="checkbox" id="remember"> Осы құрылғыда есте сақтау</label>
+    <button class="btn primary" type="submit">Кіру</button></form>
+    <p class="down" id="lockErr" style="min-height:1.4em;margin:8px 0 0"></p>
+    ${forAdmin?'<button class="btn" id="lockSkip" style="width:100%">Бос бастау (файлдарды өзім жүктеймін)</button>':''}</div>`;
+  $('#lockForm').onsubmit=async e=>{
+    e.preventDefault(); const pw=$('#pw').value; if(!pw) return;
+    $('#lockErr').textContent='Тексерілуде…';
+    try{
+      const data=await decryptData(pub,pw); applyData(data);
+      if(!forAdmin){ ($('#remember').checked?localStorage:sessionStorage).setItem(PW_KEY,pw); }
+      else save();
+      setModeInfo(); render();
+    }catch(err){ $('#lockErr').textContent='Құпия сөз қате. Қайта көріңіз.'; }
+  };
+  const sk=$('#lockSkip'); if(sk) sk.onclick=()=>render();
+}
+function openPublish(){
+  if(!state.exams.length){ toast('Алдымен файл жүктеңіз'); return; }
+  const list=[...state.exams].sort((a,b)=>a.grade-b.grade||a.type.localeCompare(b.type)||a.num-b.num);
+  $('#pubBody').innerHTML=`<p>Мұғалімдер сілтеме арқылы <b>тек талдауды</b> көреді: файл жүктей алмайды, ештеңе өзгерте алмайды. Деректер құпия сөзбен шифрланады, құпия сөзсіз оларды ешкім оқи алмайды.</p>
+    <p class="note">Жарияланатын емтихандар (${list.length}): ${list.map(e=>`${e.grade}-сынып ${esc(e.label)}`).join(', ')}</p>
+    <div style="max-width:420px">
+      <label class="f" style="display:block;margin:10px 0 4px">Мұғалімдерге арналған құпия сөз (кемінде 6 таңба)</label><input type="password" id="pp1" style="width:100%" autocomplete="new-password">
+      <label class="f" style="display:block;margin:10px 0 4px">Құпия сөзді қайталаңыз</label><input type="password" id="pp2" style="width:100%" autocomplete="new-password">
+    </div>
+    <div class="row-actions" style="margin-top:14px"><button class="btn primary" id="ppGo">data.json файлын жасау</button><span class="down" id="ppErr"></span></div>
+    <div id="ppDone"></div>`;
+  $('#ppGo').onclick=async()=>{
+    const p1=$('#pp1').value, p2=$('#pp2').value;
+    if(p1.length<6){ $('#ppErr').textContent='Құпия сөз кемінде 6 таңба болсын'; return; }
+    if(p1!==p2){ $('#ppErr').textContent='Құпия сөздер сәйкес емес'; return; }
+    $('#ppErr').textContent='';
+    const payload={date:new Date().toISOString(),th:state.th,exams:state.exams.map(e=>({file:e.file,type:e.type,grade:e.grade,num:e.num,rows:e.rows.map(({sid,...r})=>r)}))};
+    const enc=await encryptData(payload,p1);
+    const blob=new Blob([JSON.stringify(enc)],{type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='data.json'; document.body.appendChild(a); a.click(); a.remove();
+    $('#ppDone').innerHTML=`<div class="card" style="margin-top:14px;background:var(--surface-2)"><h2>✓ data.json жүктеп алынды</h2>
+      <ol class="steps"><li><b>Жүктеулер</b> (Загрузки) қалтасынан <b>data.json</b> файлын табыңыз.</li>
+      <li>GitHub-та репозиторийге өтіп, <b>Add file → Upload files</b> арқылы data.json файлын жүктеңіз де, <b>Commit changes</b> басыңыз. Ескі data.json автоматты түрде ауыстырылады.</li>
+      <li>1–2 минуттан кейін мұғалімдер сілтемені ашып, құпия сөзбен кіреді.</li></ol>
+      <p class="note">Құпия сөзді мұғалімдерге жеке жіберіңіз. Құпия сөзді өзгертсеңіз, мұғалімдерге жаңасын беру керек.</p></div>`;
+  };
+  if(!$('#dlgPublish').open) $('#dlgPublish').showModal();
+}
+$('#btnPublish').onclick=openPublish;
+$('#btnLogout').onclick=()=>{ localStorage.removeItem(PW_KEY); sessionStorage.removeItem(PW_KEY); location.reload(); };
+
+(async function init(){
+  if(ADMIN){
+    load(); if(state.exams.length) state.ui.grade=Math.max(...state.exams.map(e=>e.grade));
+    setModeInfo();
+    if(!state.exams.length){ const pub=await fetchPub(); if(pub){ showLock(pub,true); return; } }
+    render(); return;
+  }
+  TEACHER=true; document.body.classList.add('teacher');
+  $('#app').innerHTML='<p class="note" style="text-align:center;margin-top:60px">Жүктелуде…</p>';
+  const pub=await fetchPub();
+  if(!pub){ $('#app').innerHTML='<div class="card lock"><h2>Деректер әлі жарияланбаған</h2><p class="note">Мектеп әкімшілігі нәтижелерді жариялағаннан кейін осы бетте талдау пайда болады.</p></div>'; return; }
+  const saved=localStorage.getItem(PW_KEY)||sessionStorage.getItem(PW_KEY);
+  if(saved){ try{ applyData(await decryptData(pub,saved)); setModeInfo(); render(); return; }catch(e){ localStorage.removeItem(PW_KEY); sessionStorage.removeItem(PW_KEY); } }
+  showLock(pub,false);
+})();
 </script>
 </body>
 </html>
